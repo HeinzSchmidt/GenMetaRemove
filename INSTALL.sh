@@ -23,7 +23,7 @@
 
 cd ./deploy/terraform/
 terraform init
-terraform plan -out getmetaremove.tfplan
+terraform plan -out genmetaremove.tfplan
 
 echo "#####################################################"
 echo " Does the above plan look in order and error free?"
