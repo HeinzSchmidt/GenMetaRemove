@@ -46,7 +46,16 @@ resource "aws_iam_role_policy_attachment" "attach-iampolicy-to-iamrole" {
     policy_arn  = aws_iam_policy.iam-policy-for-lambda-function.arn
 }
 
-# S3 Object read policy for Lambda
+# IAM Users
+resource "aws_iam_user" "inbox-user" {
+  name = var.inbox_user
+}
+
+resource "aws_iam_user" "outbox-user" {
+  name = var.outbox_user
+}
+
+# S3 Bucket Policies
 resource "aws_s3_bucket_policy" "allow-read-from-lambda" {
     bucket = aws_s3_bucket.s3-photo-inbox.id
     policy = <<EOF
@@ -54,7 +63,6 @@ resource "aws_s3_bucket_policy" "allow-read-from-lambda" {
 	"Version": "2012-10-17",
 	"Statement": [
 		{
-			"Sid": "GetObjectStmt",
 			"Effect": "Allow",
 			"Principal": {
 				"AWS": "arn:aws:iam::682162187525:role/lambda-function-role"
@@ -64,10 +72,26 @@ resource "aws_s3_bucket_policy" "allow-read-from-lambda" {
 				"s3:ListBucket"
 			],
 			"Resource": [
-			    "arn:aws:s3:::s3-photo-inbox",
-                "arn:aws:s3:::s3-photo-inbox/*"
+			    "${aws_s3_bucket.s3-photo-inbox.arn}/*",
+                "${aws_s3_bucket.s3-photo-inbox.arn}"
 			]
-		}
+		},
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "${aws_iam_user.inbox-user.arn}"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject",
+                "s3:PutObjectAcl"
+            ],
+            "Resource": [
+                "${aws_s3_bucket.s3-photo-inbox.arn}/*",
+                "${aws_s3_bucket.s3-photo-inbox.arn}"
+            ]
+        }
 	]
 }
 EOF
@@ -82,7 +106,6 @@ resource "aws_s3_bucket_policy" "allow-write-from-lambda" {
     "Version": "2012-10-17",
 	"Statement": [
 		{
-			"Sid": "PutObjectStmt",
 			"Effect": "Allow",
 			"Principal": {
 				"AWS": "arn:aws:iam::682162187525:role/lambda-function-role"
@@ -93,10 +116,24 @@ resource "aws_s3_bucket_policy" "allow-write-from-lambda" {
 				"s3:ListBucket"
 			],
 			"Resource": [
-			    "arn:aws:s3:::s3-photo-outbox",
-                "arn:aws:s3:::s3-photo-outbox/*"
+			    "${aws_s3_bucket.s3-photo-outbox.arn}/*",
+                "${aws_s3_bucket.s3-photo-outbox.arn}"
 			]
-		}
+		},
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "${aws_iam_user.outbox-user.arn}"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "${aws_s3_bucket.s3-photo-outbox.arn}/*",
+                "${aws_s3_bucket.s3-photo-outbox.arn}"
+            ]
+        }
     ]
 }
 EOF
